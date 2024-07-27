@@ -33,6 +33,10 @@ def ask_chatgpt(question):
     except Exception as e:
         return f"An error occurred: {e}"
 
+def format_question(question):
+    formatted = question.replace("\n", "<br>")
+    return formatted
+
 def format_answer(answer):
     formatted = answer.replace("```python", "<pre><code class='language-python'>").replace("```", "</code></pre>")
     formatted = formatted.replace("\n", "<br>")
@@ -52,9 +56,10 @@ def index():
 def ask():
     question = request.form["question"]
     raw_answer = ask_chatgpt(question)
+    formatted_question = format_question(question)
     formatted_answer = format_answer(raw_answer)
     log_interaction(question, raw_answer)
-    return jsonify(question=question, answer=formatted_answer)
+    return jsonify(question=formatted_question, answer=formatted_answer)
 
 if __name__ == '__main__':
     # Flaskアプリを実行
