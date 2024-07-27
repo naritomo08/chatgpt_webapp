@@ -15,3 +15,8 @@ code {
     text-align: center;
     margin-top: 20px;
 }
+textarea.form-control {
+    height: auto;
+    min-height: 150px;
+    resize: vertical;
+}
