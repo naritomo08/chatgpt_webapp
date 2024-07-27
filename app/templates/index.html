@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPTに質問する</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/loading.js') }}" defer></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">ChatGPTに質問する</h1>
+        <form id="question-form" class="mt-4" onsubmit="submitQuestion(event)">
+            <div class="form-group">
+                <label for="question">質問:</label>
+                <input type="text" id="question" name="question" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">送信</button>
+        </form>
+        <div id="loading">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+            <p>回答作成中...</p>
+        </div>
+        <div id="result" class="mt-4">
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h2>質問:</h2>
+                </div>
+                <div class="card-body" id="result-question">
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h2>回答:</h2>
+                </div>
+                <div class="card-body" id="result-answer">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
