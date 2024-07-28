@@ -9,3 +9,5 @@ services:
     restart: always
     environment:
       - TZ=Asia/Tokyo
+    env_file:
+      - .env
