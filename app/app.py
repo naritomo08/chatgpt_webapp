@@ -3,6 +3,7 @@ import openai
 import logging
 from datetime import datetime
 import os
+from logging.handlers import TimedRotatingFileHandler
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from user import User, get_user, users
@@ -29,7 +30,15 @@ def load_user(user_id):
 log_dir = 'output'
 os.makedirs(log_dir, exist_ok=True)
 log_file_path = os.path.join(log_dir, 'chatgpt_log.log')
-logging.basicConfig(filename=log_file_path, level=logging.INFO, format='%(asctime)s - %(message)s')
+
+# TimedRotatingFileHandlerを使ったロギング設定
+handler = TimedRotatingFileHandler(log_file_path, when='midnight', interval=1, backupCount=7)
+handler.suffix = "%Y-%m-%d"
+handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(message)s')
+handler.setFormatter(formatter)
+logging.getLogger().addHandler(handler)
+logging.getLogger().setLevel(logging.INFO)
 
 def ask_chatgpt(question):
     try:
