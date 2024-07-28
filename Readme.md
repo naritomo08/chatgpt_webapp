@@ -8,7 +8,9 @@ chatgptに質問をしてみて回答を得るwebアプリになります。
 
 本プログラムはmac/Linuxで動かしてください。
 
-ChatGPT APIもあらかじめ入手してください。
+ChatGPT API keyも以下のページからあらかじめ入手してください。
+
+https://platform.openai.com/playground/
 
 ## 初期設定
 
