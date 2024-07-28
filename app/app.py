@@ -32,8 +32,27 @@ os.makedirs(log_dir, exist_ok=True)
 log_file_path = os.path.join(log_dir, 'chatgpt_log.log')
 
 # TimedRotatingFileHandlerを使ったロギング設定
-handler = TimedRotatingFileHandler(log_file_path, when='midnight', interval=1, backupCount=7)
-handler.suffix = "%Y-%m-%d"
+class CustomTimedRotatingFileHandler(TimedRotatingFileHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.baseFilename = self.rotation_filename(self.baseFilename)
+
+    def rotation_filename(self, default_name):
+        # 日付付きのファイル名を生成
+        if not self.when.startswith('W'):
+            current_time = datetime.now()
+            dfn = self.baseFilename.replace(".log", "") + "-" + current_time.strftime(self.suffix) + ".log"
+            return dfn
+        return default_name
+
+    def doRollover(self):
+        super().doRollover()
+        # 最新のファイル名を chatgpt_log.log にリセット
+        if not self.delay:
+            self.stream = self._open()
+
+handler = CustomTimedRotatingFileHandler(log_file_path, when='midnight', interval=1, backupCount=7)
+handler.suffix = "%Y%m%d"
 handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 handler.setFormatter(formatter)
