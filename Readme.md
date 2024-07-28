@@ -16,9 +16,8 @@ ChatGPT APIもあらかじめ入手してください。
 git clone https://github.com/naritomo08/chatgpt_webapp.git
 cd chatgpt_webapp.git
 rm -rf .git
-cp app
-cp variable_ref.py variable.py
-vi variable.py
+cp .env_ref .env
+vi .env
 
 以下の””の中にAPIキーを入力する。
 
@@ -33,6 +32,20 @@ docker-compose up -d
 
 ```bash
 http://localhost:3100/
+→ログイン画面が出るので、testuser/testpasswordを入れてください。
+```
+
+## ユーザー設定
+
+```bash
+ユーザー追加や変更する際は、user.pyの以下の箇所について書き換えたり、
+カンマ追加してユーザー情報を追記してください。
+
+# サンプルユーザーデータ
+users = {
+    "testuser": User(id=1, username="testuser", password="testpassword")
+}
+
 ```
 
 ## 質問実施履歴
