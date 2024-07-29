@@ -55,7 +55,7 @@ users = {
 ```bash
 以下のファイルに保管されています。
 
-app/output/chatgpt_log.log
+log_writer/output/chatgpt_log.log
 ```
 
 ## Webアプリ起動
