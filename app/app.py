@@ -3,10 +3,11 @@ import openai
 import logging
 from datetime import datetime
 import os
-from logging.handlers import TimedRotatingFileHandler
+import redis
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from user import User, get_user, users
+import json
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')  # セッションのためのシークレットキーを設定
@@ -17,6 +18,15 @@ csrf = CSRFProtect(app)
 # 環境変数からOpenAIのAPIキーを設定
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+# Redisクライアントの設定
+redis_client = redis.Redis(host='redis', port=6379, db=0)
+
+# Redis接続の確認
+try:
+    redis_client.ping()
+except redis.ConnectionError:
+    raise RuntimeError("Redis server is not available")
+
 # Flask-Loginの設定
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -25,39 +35,6 @@ login_manager.login_view = 'login'
 @login_manager.user_loader
 def load_user(user_id):
     return next((user for user in users.values() if user.id == int(user_id)), None)
-
-# ロギングの設定
-log_dir = 'output'
-os.makedirs(log_dir, exist_ok=True)
-log_file_path = os.path.join(log_dir, 'chatgpt_log.log')
-
-# TimedRotatingFileHandlerを使ったロギング設定
-class CustomTimedRotatingFileHandler(TimedRotatingFileHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.baseFilename = self.rotation_filename(self.baseFilename)
-
-    def rotation_filename(self, default_name):
-        # 日付付きのファイル名を生成
-        if not self.when.startswith('W'):
-            current_time = datetime.now()
-            dfn = self.baseFilename.replace(".log", "") + "-" + current_time.strftime(self.suffix) + ".log"
-            return dfn
-        return default_name
-
-    def doRollover(self):
-        super().doRollover()
-        # 最新のファイル名を chatgpt_log.log にリセット
-        if not self.delay:
-            self.stream = self._open()
-
-handler = CustomTimedRotatingFileHandler(log_file_path, when='midnight', interval=1, backupCount=7)
-handler.suffix = "%Y%m%d"
-handler.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(message)s')
-handler.setFormatter(formatter)
-logging.getLogger().addHandler(handler)
-logging.getLogger().setLevel(logging.INFO)
 
 def ask_chatgpt(question):
     try:
@@ -75,7 +52,8 @@ def ask_chatgpt(question):
         return answer
 
     except Exception as e:
-        return f"An error occurred: {e}"
+        logging.error(f"Error communicating with OpenAI: {e}")
+        return "An error occurred while communicating with the AI."
 
 def format_question(question):
     formatted = question.replace("\n", "<br>")
@@ -89,8 +67,13 @@ def format_answer(answer):
 
 def log_interaction(user, question, answer):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = f"{timestamp}\nUser: {user.username}\nQuestion:\n{question}\nAnswer:\n{answer}\n{'-'*80}"
-    logging.info(log_entry)
+    log_entry = {
+        "timestamp": timestamp,
+        "user": user.username,
+        "question": question,
+        "answer": answer
+    }
+    redis_client.lpush('chatgpt_logs', json.dumps(log_entry))
 
 @app.route("/", methods=["GET"])
 @login_required

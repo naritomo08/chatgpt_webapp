@@ -2,3 +2,4 @@ openai==0.28.0
 Flask
 flask-login
 flask-wtf
+redis
