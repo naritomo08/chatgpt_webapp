@@ -25,7 +25,7 @@ function QuestionForm({ apiBaseUrl }) {
             }
         } catch (error) {
             console.error('Error:', error);
-            setMessage('An error occurred while fetching data.');
+            setMessage('An error occurred while fetching data: ' + (error.response?.data?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -34,10 +34,16 @@ function QuestionForm({ apiBaseUrl }) {
     const handleLogout = async () => {
         try {
             await axios.post(`${apiBaseUrl}/logout`);
-            window.location.reload();
+            window.location.href = '/login';
         } catch (error) {
             console.error('Error logging out:', error);
+            setMessage('Error logging out: ' + error.message);
         }
+    };
+
+    const handleChange = (e) => {
+        setQuestion(e.target.value);
+        setMessage('');
     };
 
     return (
@@ -54,7 +60,7 @@ function QuestionForm({ apiBaseUrl }) {
                     <textarea
                         className="form-control w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                         value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
+                        onChange={handleChange}
                         required
                     />
                 </div>
