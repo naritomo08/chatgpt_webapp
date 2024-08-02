@@ -1,31 +1,44 @@
-from flask import Flask, request, render_template, jsonify, redirect, url_for, flash
+from flask import Flask, request, jsonify, redirect, url_for, flash
+from flask_cors import CORS
 import openai
 import logging
 from datetime import datetime
 import os
-import redis
+from logging.handlers import TimedRotatingFileHandler
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from user import User, get_user, users
+import redis
 import json
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')  # セッションのためのシークレットキーを設定
+app.secret_key = os.getenv('SECRET_KEY')
 
-# CSRF保護の設定
-csrf = CSRFProtect(app)
+# CORSの設定
+CORS(app, supports_credentials=True)
 
-# 環境変数からOpenAIのAPIキーを設定
+# OpenAI APIキーの環境変数設定
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Redisクライアントの設定
 redis_client = redis.Redis(host='redis', port=6379, db=0)
 
-# Redis接続の確認
 try:
     redis_client.ping()
 except redis.ConnectionError:
     raise RuntimeError("Redis server is not available")
+
+# ロギングの設定
+log_dir = 'output'
+os.makedirs(log_dir, exist_ok=True)
+log_file_path = os.path.join(log_dir, 'chatgpt_log.log')
+
+handler = TimedRotatingFileHandler(log_file_path, when='midnight', interval=1, backupCount=7)
+handler.suffix = "%Y%m%d"
+formatter = logging.Formatter('%(asctime)s - %(message)s')
+handler.setFormatter(formatter)
+logging.getLogger().addHandler(handler)
+logging.getLogger().setLevel(logging.INFO)
 
 # Flask-Loginの設定
 login_manager = LoginManager()
@@ -49,73 +62,79 @@ def ask_chatgpt(question):
 
         # 回答を取得
         answer = response.choices[0].message['content']
+        if not answer:
+            return "No response from API"
         return answer
 
     except Exception as e:
-        logging.error(f"Error communicating with OpenAI: {e}")
-        return "An error occurred while communicating with the AI."
+        logging.error(f"Error contacting OpenAI API: {e}")
+        return f"An error occurred: {e}"
+
+def log_interaction(user, question, answer):
+    try:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_entry = {
+            "timestamp": timestamp,
+            "user": user.username,
+            "question": question,
+            "answer": answer
+        }
+        logging.info(json.dumps(log_entry, ensure_ascii=False, indent=2))
+    except Exception as e:
+        logging.error(f"Logging error: {e}")
 
 def format_question(question):
+    """質問をHTML形式にフォーマットします。"""
     formatted = question.replace("\n", "<br>")
     return formatted
 
 def format_answer(answer):
+    """回答をHTML形式にフォーマットします。"""
     formatted = answer.replace("```python", "<pre><code class='language-python'>").replace("```", "</code></pre>")
     formatted = formatted.replace("\n", "<br>")
     formatted = formatted.replace("<br><pre>", "<pre>").replace("</pre><br>", "</pre>")
     return formatted
 
-def log_interaction(user, question, answer):
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    log_entry = {
-        "timestamp": timestamp,
-        "user": user.username,
-        "question": question,
-        "answer": answer
-    }
-    redis_client.lpush('chatgpt_logs', json.dumps(log_entry))
-
-@app.route("/", methods=["GET"])
-@login_required
-def index():
-    return render_template("index.html", username=current_user.username)
-
 @app.route("/ask", methods=["POST"])
 @login_required
 def ask():
-    question = request.form["question"]
+    question = request.json.get("question")  # JSONデータから質問を取得
+    if not question:
+        return jsonify({"error": "Question is required"}), 400
+
     raw_answer = ask_chatgpt(question)
     formatted_question = format_question(question)
     formatted_answer = format_answer(raw_answer)
     log_interaction(current_user, question, raw_answer)
     return jsonify(question=formatted_question, answer=formatted_answer)
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST", "OPTIONS"])
 def login():
+    if request.method == "OPTIONS":
+        return jsonify(success=True), 200
+    
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.json["username"]
+        password = request.json["password"]
         user = get_user(username)
         if user and user.password == password:
             login_user(user)
-            flash("Logged in successfully.", "success")
-            return redirect(url_for("index"))
+            return jsonify({"success": True, "message": "Logged in successfully."})
         else:
-            flash("Invalid username or password.", "danger")
-            return redirect(url_for("login"))  # ログイン失敗時にリダイレクトする
-    return render_template("login.html")
+            return jsonify({"success": False, "message": "Invalid username or password."})
+    
+    # GETメソッドの対応（リダイレクトまたは簡単なメッセージを返す）
+    return jsonify({"success": False, "message": "Use POST method for login."})
 
 @app.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
-    flash("You have been logged out.", "success")
-    return redirect(url_for("login"))
+    return jsonify(success=True)
 
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify(status="OK", timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 if __name__ == '__main__':
-    # Flaskアプリを実行
     app.run(host='0.0.0.0', port=3100, debug=False)

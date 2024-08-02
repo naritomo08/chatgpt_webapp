@@ -3,3 +3,6 @@ Flask
 flask-login
 flask-wtf
 redis
+requests>=2.20
+tqdm
+flask-cors

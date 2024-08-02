@@ -1,9 +1,10 @@
 #version: '3.8'
+
 volumes:
   cache_volume:
 
 services:
-  chatgpt_webapp:
+  chatgpt_backend:
     build: ./app
     ports:
       - "3100:3100"
@@ -14,6 +15,8 @@ services:
       - TZ=Asia/Tokyo
     env_file:
       - .env
+    depends_on:
+      - redis
 
   redis:
     image: redis:latest
@@ -35,3 +38,15 @@ services:
       - TZ=Asia/Tokyo
     depends_on:
       - redis
+
+  chatgpt_frontend:
+    build:
+      context: ./chatgpt-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./chatgpt-frontend:/chatgpt-frontend
+    restart: always
+    environment:
+      - TZ=Asia/Tokyo
