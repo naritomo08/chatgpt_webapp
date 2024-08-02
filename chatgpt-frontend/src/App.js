@@ -45,7 +45,7 @@ function App() {
   return (
     <div>
       {loggedIn ? (
-        <QuestionForm apiBaseUrl={config.apiBaseUrl} />
+        <QuestionForm apiBaseUrl={config.apiBaseUrl} setLoggedIn={setLoggedIn} />
       ) : (
         <Login setLoggedIn={setLoggedIn} apiBaseUrl={config.apiBaseUrl} />
       )}
