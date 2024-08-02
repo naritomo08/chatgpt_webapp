@@ -50,12 +50,13 @@ users = {
 
 ```
 
-## 質問実施履歴
+## フロント、バックログ
 
 ```bash
-以下のファイルに保管されています。
+以下のフォルダに保管されています。
 
-log_writer/output/chatgpt_log.log
+chatgpt-backend/output
+chatgpt-frontend/output
 ```
 
 ## Webアプリ起動

@@ -8,7 +8,6 @@ from logging.handlers import TimedRotatingFileHandler
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
 from user import User, get_user, users
-import redis
 import json
 
 app = Flask(__name__)
@@ -16,17 +15,14 @@ app.secret_key = os.getenv('SECRET_KEY')
 
 # CORSの設定
 CORS(app, supports_credentials=True)
+#CORS(app, supports_credentials=True, resources={
+#    r"/*": {
+#        "origins": ["http://your-frontend-domain.com"]  # フロントエンドのURLに置き換える
+#    }
+#})
 
 # OpenAI APIキーの環境変数設定
 openai.api_key = os.getenv('OPENAI_API_KEY')
-
-# Redisクライアントの設定
-redis_client = redis.Redis(host='redis', port=6379, db=0)
-
-try:
-    redis_client.ping()
-except redis.ConnectionError:
-    raise RuntimeError("Redis server is not available")
 
 # ロギングの設定
 log_dir = 'output'
@@ -135,6 +131,15 @@ def logout():
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify(status="OK", timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+# 設定を提供するエンドポイントを追加
+@app.route("/config", methods=["GET"])
+def get_config():
+    config = {
+        "apiBaseUrl": os.getenv('REACT_APP_API_BASE_URL'),
+        "timeZone": os.getenv('TZ', 'Asia/Tokyo')
+    }
+    return jsonify(config)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3100, debug=False)

@@ -1,30 +1,20 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function QuestionForm() {
+function QuestionForm({ apiBaseUrl }) {
     const [question, setQuestion] = useState('');
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
-
-    const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
 
         try {
-            const response = await fetch(`${apiBaseUrl}/ask`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ question }),
-            });
+            const response = await axios.post(`${apiBaseUrl}/ask`, { question }, { withCredentials: true });
 
-            const data = await response.json();
-
+            const data = response.data;
             if (data.error) {
                 setMessage(data.error);
             } else if (data.question && data.answer) {

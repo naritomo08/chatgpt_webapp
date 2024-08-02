@@ -1,35 +1,40 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function Login({ setLoggedIn }) {
+function Login({ setLoggedIn, apiBaseUrl }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [message, setMessage] = useState(''); // メッセージ用の状態を追加
-
-    const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+    const [message, setMessage] = useState('');
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-    
+
         try {
             const response = await axios.post(`${apiBaseUrl}/login`, { username, password }, { withCredentials: true });
-            
+
             if (response.data.success) {
                 setMessage(response.data.message);
                 setLoggedIn(true);
+                setUsername(''); // 入力フィールドをクリア
+                setPassword('');
             } else {
                 setMessage(response.data.message);
             }
         } catch (error) {
             console.error('Login error:', error);
-            setMessage('Login failed. Please try again.');
+
+            if (error.response) {
+                setMessage(error.response.data.message || 'Login failed. Please try again.');
+            } else {
+                setMessage('Network error. Please try again.');
+            }
         }
     };
 
     return (
         <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded">
             <h1 className="text-2xl font-bold text-center mb-4">Login</h1>
-            {message && <p className="mb-4 text-center text-red-500">{message}</p>} {/* メッセージ表示 */}
+            {message && <p className="mb-4 text-center text-red-500">{message}</p>}
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                     <label className="block text-sm font-medium mb-2">Username:</label>
