@@ -61,7 +61,7 @@ log_writer/output/chatgpt_log.log
 ## Webアプリ起動
 
 ```bash
-docker-compose down
+docker-compose up -d
 ```
 
 ## Webアプリ停止
