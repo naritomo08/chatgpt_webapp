@@ -13,7 +13,7 @@ class CustomTimedRotatingFileHandler(TimedRotatingFileHandler):
         if self.stream:
             self.stream.close()
             self.stream = None
-        
+
         current_time = int(time.time())
         dst_now = time.localtime(current_time)[-1]
         t = self.rolloverAt - self.interval
@@ -30,19 +30,19 @@ class CustomTimedRotatingFileHandler(TimedRotatingFileHandler):
                 time_tuple = time.localtime(t + addend)
 
         dfn = self.baseFilename.replace(".log", "") + "-" + time.strftime("%Y%m%d", time_tuple) + ".log"
-        
+
         if os.path.exists(dfn):
             os.remove(dfn)
-        
+
         self.rotate(self.baseFilename, dfn)
-        
+
         if not self.delay:
             self.stream = self._open()
-        
+
         new_rollover_at = self.computeRollover(current_time)
         while new_rollover_at <= current_time:
             new_rollover_at += self.interval
-        
+            
         if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
             dst_at_rollover = time.localtime(new_rollover_at)[-1]
             if dst_now != dst_at_rollover:
@@ -73,20 +73,26 @@ logger = logging.getLogger('task_logger')
 logger.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-# Redisからログを取得してファイルに書き込む関数
-def write_logs_to_file():
+# Redisからすべてのログを取得してファイルに書き込み、リストをクリアする関数
+def write_and_clear_logs():
     while True:
-        log_entry = redis_client.lpop('chatgpt_logs')
-        if log_entry:
-            try:
-                log_entry = json.loads(log_entry)
-                log_message = f"{log_entry['timestamp']}\nUser: {log_entry['user']}\nQuestion:\n{log_entry['question']}\nAnswer:\n{log_entry['answer']}\n{'-'*80}"
-                logger.info(log_message)
-            except json.JSONDecodeError:
-                # 不正なデータを無視する
-                continue
+        # Redisのリストからすべてのエントリを取得
+        log_entries = redis_client.lrange('chatgpt_logs', 0, -1)
+        
+        if log_entries:
+            for log_entry in log_entries:
+                try:
+                    log_entry = json.loads(log_entry)
+                    log_message = f"{log_entry['timestamp']}\nUser: {log_entry['user']}\nQuestion:\n{log_entry['question']}\nAnswer:\n{log_entry['answer']}\n{'-'*80}"
+                    logger.info(log_message)
+                except json.JSONDecodeError:
+                    # 不正なデータを無視する
+                    continue
+            
+            # すべてのエントリを処理した後にリストをクリア
+            redis_client.delete('chatgpt_logs')
         else:
             time.sleep(10)  # Redisが空の場合、10秒待機
 
 if __name__ == "__main__":
-    write_logs_to_file()
+    write_and_clear_logs()
