@@ -7,12 +7,14 @@ function QuestionForm() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
+    const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+
     const handleSubmit = async (event) => {
         event.preventDefault();
-        setLoading(true); // リクエスト開始時にloadingをtrueに設定
+        setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:3100/ask', {
+            const response = await fetch(`${apiBaseUrl}/ask`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -24,9 +26,9 @@ function QuestionForm() {
             const data = await response.json();
 
             if (data.error) {
-                setMessage(data.error); // エラーメッセージを表示
+                setMessage(data.error);
             } else if (data.question && data.answer) {
-                setResult(data); // 質問と回答を設定
+                setResult(data);
                 setMessage('');
             } else {
                 setMessage('Failed to get a valid response.');
@@ -35,13 +37,13 @@ function QuestionForm() {
             console.error('Error:', error);
             setMessage('An error occurred while fetching data.');
         } finally {
-            setLoading(false); // リクエスト終了時にloadingをfalseに設定
+            setLoading(false);
         }
     };
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:3100/logout');
+            await axios.post(`${apiBaseUrl}/logout`);
             window.location.reload();
         } catch (error) {
             console.error('Error logging out:', error);
@@ -49,27 +51,39 @@ function QuestionForm() {
     };
 
     return (
-        <div>
-            <h1>ChatGPTに質問する</h1>
-            <button onClick={handleLogout}>ログアウト</button>
+        <div className="max-w-xl mx-auto mt-10 p-4">
+            <h1 className="text-2xl font-bold text-center mb-4">ChatGPTに質問する</h1>
+            <div className="flex justify-end mb-4">
+                <button className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded" onClick={handleLogout}>
+                    ログアウト
+                </button>
+            </div>
             <form onSubmit={handleSubmit}>
-                <div>
-                    <label>質問:</label>
+                <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2">質問:</label>
                     <textarea
+                        className="form-control w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
                         required
                     />
                 </div>
-                <button type="submit">送信</button>
+                <button
+                    type="submit"
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    disabled={loading}
+                >
+                    送信
+                </button>
             </form>
-            {loading && <p>回答作成中...</p>} {/* loadingがtrueのときに表示 */}
+            {loading && <p className="mt-3 text-blue-600">回答作成中...</p>}
+            {message && <p className="mt-3 text-red-500">{message}</p>}
             {result && (
-                <div>
-                    <h2>質問:</h2>
-                    <p>{result.question}</p>
-                    <h2>回答:</h2>
-                    <p>{result.answer}</p>
+                <div className="mt-6">
+                    <h2 className="font-bold text-lg">質問:</h2>
+                    <div dangerouslySetInnerHTML={{ __html: result.question }} />
+                    <h2 className="font-bold text-lg">回答:</h2>
+                    <div dangerouslySetInnerHTML={{ __html: result.answer }} />
                 </div>
             )}
         </div>

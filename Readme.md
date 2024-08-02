@@ -15,7 +15,7 @@ https://platform.openai.com/playground/
 ## 初期設定
 
 ```bash
-git clone https://github.com/naritomo08/chatgpt_webapp.git
+git clone -b ReactFlaskDev https://github.com/naritomo08/chatgpt_webapp.git
 cd chatgpt_webapp.git
 rm -rf .git
 cp .env_ref .env
@@ -33,7 +33,7 @@ docker-compose up -d
 ## サイト参照
 
 ```bash
-http://localhost:3100/
+http://localhost:3000/
 →ログイン画面が出るので、testuser/testpasswordを入れてください。
 ```
 
@@ -61,7 +61,7 @@ log_writer/output/chatgpt_log.log
 ## Webアプリ起動
 
 ```bash
-docker-compose down
+docker-compose up -d
 ```
 
 ## Webアプリ停止

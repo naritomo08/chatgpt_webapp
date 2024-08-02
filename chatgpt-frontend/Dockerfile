@@ -13,6 +13,10 @@ RUN npm install
 # アプリケーションのソースをコピー
 COPY . .
 
+# 環境変数をビルド時に注入
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=${REACT_APP_API_BASE_URL}
+
 # ビルド
 RUN npm run build
 

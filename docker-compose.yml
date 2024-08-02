@@ -43,6 +43,8 @@ services:
     build:
       context: ./chatgpt-frontend
       dockerfile: Dockerfile
+      args:
+      - REACT_APP_API_BASE_URL=http://localhost:3100
     ports:
       - "3000:3000"
     volumes:
