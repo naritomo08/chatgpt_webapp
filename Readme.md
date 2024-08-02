@@ -16,7 +16,7 @@ https://platform.openai.com/playground/
 
 ```bash
 git clone -b ReactFlaskDev https://github.com/naritomo08/chatgpt_webapp.git
-cd chatgpt_webapp.git
+cd chatgpt_webapp
 rm -rf .git
 cp .env_ref .env
 vi .env
@@ -24,8 +24,6 @@ vi .env
 以下の””の中にAPIキーを入力する。
 
 api_key = ""
-
-cd ..
 
 docker-compose up -d
 ```
