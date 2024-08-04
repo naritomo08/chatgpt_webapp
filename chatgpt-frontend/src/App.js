@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet';
 import Login from './Login';
 import QuestionForm from './QuestionForm';
 
@@ -44,6 +45,9 @@ function App() {
 
   return (
     <div>
+      <Helmet>
+        <title>{loggedIn ? '質問フォーム' : 'ログインページ'}</title>
+      </Helmet>
       {loggedIn ? (
         <QuestionForm apiBaseUrl={config.apiBaseUrl} setLoggedIn={setLoggedIn} />
       ) : (
