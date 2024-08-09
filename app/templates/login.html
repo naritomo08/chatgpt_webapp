@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPTに質問する Login</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
     <div class="container mt-5">
         <h1 class="text-center">ChatGPTに質問する Login</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -29,5 +23,4 @@
             <button type="submit" class="btn btn-primary btn-block">Login</button>
         </form>
     </div>
-</body>
-</html>
+{% endblock %}
