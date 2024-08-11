@@ -6,12 +6,12 @@ import os
 import redis
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from flask_wtf.csrf import CSRFProtect
-from user import User, get_user, users
+from user import get_user, users
 import json
 from forms import LoginForm
 
 app = Flask(__name__)
-app.secret_key = 'your_fixed_secret_key_here'  # セッションのためのシークレットキーを設定
+app.secret_key = os.environ.get('SECRET_KEY', 'your_fixed_secret_key_here')  # セッションのためのシークレットキーを設定
 
 # CSRF保護の設定
 csrf = CSRFProtect(app)
