@@ -10,7 +10,7 @@ from user import User, get_user, users
 import json
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')  # セッションのためのシークレットキーを設定
+app.secret_key = os.urandom(24)  # セッションのためのシークレットキーを設定
 
 # CSRF保護の設定
 csrf = CSRFProtect(app)
