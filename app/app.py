@@ -123,6 +123,13 @@ def show_404_page(error):
     print('エラー内容:',msg)
     return render_template('errors/404.html'), 404
 
+# エラーハンドリング
+@app.errorhandler(400)
+def show_400_page(error):
+    msg = error.description
+    print('エラー内容:',msg)
+    return render_template('errors/400CSRF.html'), 400
+
 if __name__ == '__main__':
     # Flaskアプリを実行
     app.run(host='0.0.0.0', port=3100, debug=False)
