@@ -11,16 +11,16 @@
             {% endif %}
         {% endwith %}
         <form method="POST" action="{{ url_for('login') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {{ form.hidden_tag() }}
             <div class="form-group">
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" class="form-control" required>
+                {{ form.username(class="form-control") }}
             </div>
             <div class="form-group">
                 <label for="password">Password:</label>
-                <input type="password" id="password" name="password" class="form-control" required>
+                {{ form.password(class="form-control") }}
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
+            {{ form.submit(class="btn btn-primary btn-block") }}
         </form>
     </div>
 {% endblock %}

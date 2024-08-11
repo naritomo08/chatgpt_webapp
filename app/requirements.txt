@@ -3,3 +3,4 @@ Flask
 flask-login
 flask-wtf
 redis
+WTForms
