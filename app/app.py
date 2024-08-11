@@ -11,7 +11,7 @@ import json
 from forms import LoginForm
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # セッションのためのシークレットキーを設定
+app.secret_key = 'your_fixed_secret_key_here'  # セッションのためのシークレットキーを設定
 
 # CSRF保護の設定
 csrf = CSRFProtect(app)
