@@ -8,6 +8,7 @@ from flask_login import LoginManager, login_user, login_required, logout_user, c
 from flask_wtf.csrf import CSRFProtect
 from user import User, get_user, users
 import json
+from forms import LoginForm
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)  # セッションのためのシークレットキーを設定
@@ -92,9 +93,10 @@ def ask():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+    form = LoginForm()  # フォームのインスタンスを作成
+    if form.validate_on_submit():  # フォームのバリデーションとサブミットの確認
+        username = form.username.data
+        password = form.password.data
         user = get_user(username)
         if user and user.password == password:
             login_user(user)
@@ -102,8 +104,8 @@ def login():
             return redirect(url_for("index"))
         else:
             flash("Invalid username or password.", "danger")
-            return redirect(url_for("login"))  # ログイン失敗時にリダイレクトする
-    return render_template("login.html")
+            return redirect(url_for("login"))
+    return render_template("login.html", form=form)  # フォームをテンプレートに渡す
 
 @app.route("/logout", methods=["POST"])
 @login_required
