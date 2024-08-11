@@ -116,6 +116,13 @@ def logout():
 def health_check():
     return jsonify(status="OK", timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
+# エラーハンドリング
+@app.errorhandler(404)
+def show_404_page(error):
+    msg = error.description
+    print('エラー内容:',msg)
+    return render_template('errors/404.html'), 404
+
 if __name__ == '__main__':
     # Flaskアプリを実行
     app.run(host='0.0.0.0', port=3100, debug=False)
