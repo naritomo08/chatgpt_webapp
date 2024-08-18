@@ -23,7 +23,7 @@ vi .env
 
 以下の””の中にAPIキーを入力する。
 
-api_key = ""
+OPENAI_API_KEY = ""
 
 docker-compose up -d
 ```
