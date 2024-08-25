@@ -3,10 +3,19 @@ volumes:
   cache_volume:
 
 services:
-  chatgpt_webapp:
-    build: ./app
+  nginx:
+    build: ./nginx
     ports:
-      - "3100:3100"
+      - "80:80"
+    volumes:
+      - ./nginx/nginx_logs:/var/log/nginx
+    depends_on:
+      - chatgpt-webapp
+    environment:
+      - TZ=Asia/Tokyo
+
+  chatgpt-webapp:
+    build: ./app
     volumes:
       - ./app:/app
     restart: always

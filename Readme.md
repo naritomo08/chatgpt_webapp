@@ -31,7 +31,7 @@ docker-compose up -d
 ## サイト参照
 
 ```bash
-http://localhost:3100/
+http://localhost/
 →ログイン画面が出るので、testuser/testpasswordを入れてください。
 ```
 
