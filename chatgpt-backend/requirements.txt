@@ -1,8 +1,8 @@
-openai==0.28.0
+openai
 Flask
 flask-login
 flask-wtf
 redis
-requests>=2.20
+requests
 tqdm
 flask-cors

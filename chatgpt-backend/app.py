@@ -48,8 +48,8 @@ def load_user(user_id):
 def ask_chatgpt(question):
     try:
         # ChatGPTに質問を送り、回答を得る
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": question}
@@ -57,7 +57,7 @@ def ask_chatgpt(question):
         )
 
         # 回答を取得
-        answer = response.choices[0].message['content']
+        answer = response.choices[0].message.content
         if not answer:
             return "No response from API"
         return answer
