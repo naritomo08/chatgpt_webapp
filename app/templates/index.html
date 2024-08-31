@@ -2,7 +2,7 @@
 
 {% block content %}
     <div class="container mt-5">
-        <h1 class="text-center">ChatGPTに質問する</h1>
+        <h1 class="text-center">ChatGPTと会話する</h1>
         <div class="text-right">
             <p>ログイン中のユーザー: {{ username }}</p>
             <form action="{{ url_for('logout') }}" method="post" style="display: inline;">
@@ -18,6 +18,10 @@
             </div>
             <button type="submit" class="btn btn-primary btn-block">送信</button>
             <button type="button" class="btn btn-secondary btn-block" onclick="clearQuestion()">質問クリア</button>
+        </form>
+        <form action="{{ url_for('reset_chat') }}" method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger">チャット履歴をリセット</button>
         </form>
         <div id="loading" style="display: none;">
             <div class="spinner-border" role="status">
@@ -39,6 +43,21 @@
                 </div>
                 <div class="card-body" id="result-answer">
                 </div>
+            </div>
+        </div>
+        <div class="container mt-4">
+            <h2>チャット履歴</h2>
+            <div id="chat-history">
+                {% for message in chat_history %}
+                    <div class="card mt-2">
+                        <div class="card-header">
+                            <strong>{{ "ユーザー" if message.role == "user" else "アシスタント" }}:</strong>
+                        </div>
+                        <div class="card-body">
+                            <p>{{ message.content|safe }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

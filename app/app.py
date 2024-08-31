@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify, redirect, url_for, flash
+from flask import Flask, request, render_template, jsonify, session, redirect, url_for, flash
 import openai
 import logging
 from datetime import datetime
@@ -37,19 +37,40 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     return next((user for user in users.values() if user.id == int(user_id)), None)
 
-def ask_chatgpt(question):
+def get_chat_history(user_id):
+    # Redisからユーザーのチャット履歴を取得
+    history = redis_client.get(f"chat_history:{user_id}")
+    if history:
+        return json.loads(history)
+    return []
+
+def save_chat_history(user_id, history):
+    # Redisにユーザーのチャット履歴を保存
+    redis_client.set(f"chat_history:{user_id}", json.dumps(history))
+
+def ask_chatgpt(question, user_id):
     try:
+        # ユーザーのチャット履歴を取得
+        chat_history = get_chat_history(user_id)
+        
+        # 現在の質問をチャット履歴に追加
+        chat_history.append({"role": "user", "content": question})
+        
         # ChatGPTに質問を送り、回答を得る
         response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": question}
-            ]
+            model="gpt-4",
+            messages=chat_history
         )
-
+        
         # 回答を取得
         answer = response.choices[0].message.content
+        
+        # 回答をチャット履歴に追加
+        chat_history.append({"role": "assistant", "content": answer})
+        
+        # 更新されたチャット履歴を保存
+        save_chat_history(user_id, chat_history)
+        
         return answer
 
     except Exception as e:
@@ -79,17 +100,26 @@ def log_interaction(user, question, answer):
 @app.route("/", methods=["GET"])
 @login_required
 def index():
-    return render_template("index.html", username=current_user.username)
+    chat_history = get_chat_history(current_user.id)  # ユーザーのチャット履歴を取得
+    return render_template("index.html", username=current_user.username, chat_history=chat_history)
 
 @app.route("/ask", methods=["POST"])
-@login_required
+@login_required  # ログインユーザーのみアクセス可能
 def ask():
     question = request.form["question"]
-    raw_answer = ask_chatgpt(question)
+    raw_answer = ask_chatgpt(question, current_user.id)
     formatted_question = format_question(question)
     formatted_answer = format_answer(raw_answer)
     log_interaction(current_user, question, raw_answer)
     return jsonify(question=formatted_question, answer=formatted_answer)
+
+@app.route("/reset", methods=["POST"])
+@login_required
+def reset_chat():
+    # Redisからユーザーのチャット履歴を削除
+    redis_client.delete(f"chat_history:{current_user.id}")
+    flash("Chat history has been reset.", "success")
+    return redirect(url_for("index"))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -118,19 +148,20 @@ def logout():
 def health_check():
     return jsonify(status="OK", timestamp=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-# エラーハンドリング
+@app.route('/error_page', methods=['GET'])
+def error_page():
+    error_message = session.pop('error_message', "戻るボタンを押してください。")
+    return render_template('errors/error.html', error_message=error_message), 500
+
 @app.errorhandler(404)
 def show_404_page(error):
-    msg = error.description
-    print('エラー内容:',msg)
-    return render_template('errors/404.html'), 404
+    error_message = error.description
+    return render_template('errors/error.html', error_message=error_message), 404
 
-# エラーハンドリング
 @app.errorhandler(400)
 def show_400_page(error):
-    msg = error.description
-    print('エラー内容:',msg)
-    return render_template('errors/400CSRF.html'), 400
+    error_message = error.description
+    return render_template('errors/error.html', error_message=error_message), 400
 
 if __name__ == '__main__':
     # Flaskアプリを実行
