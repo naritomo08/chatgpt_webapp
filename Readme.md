@@ -1,6 +1,6 @@
 # chatgpt_webapp
 
-chatgptに質問をしてみて回答を得るwebアプリになります。
+chatgptと会話するwebアプリになります。
 
 ## 事前作業
 
