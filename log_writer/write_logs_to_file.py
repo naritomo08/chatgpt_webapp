@@ -20,17 +20,19 @@ log_file = os.path.join(log_dir, 'chatgpt_log.log')
 
 # 古いログを削除する関数
 def cleanup_old_logs(log_dir, days_to_keep=7):
-    """指定された日数より古いログファイルを削除"""
+    """指定された日数より古い chatgpt_log.log.yyyymmdd 形式のログファイルを削除"""
     cutoff_date = datetime.now() - timedelta(days=days_to_keep)
     for file_name in os.listdir(log_dir):
-        if file_name.startswith("chatgpt_log-") and file_name.endswith(".log"):
-            date_part = file_name.replace("chatgpt_log-", "").replace(".log", "")
+        if file_name.startswith("chatgpt_log.log.") and file_name.endswith(".log"):
+            # ファイル名から日付部分を抽出
+            date_part = file_name.replace("chatgpt_log.log.", "").replace(".log", "")
             try:
                 file_date = datetime.strptime(date_part, "%Y%m%d")
                 if file_date < cutoff_date:
                     os.remove(os.path.join(log_dir, file_name))
+                    print(f"Deleted old log file: {file_name}")
             except ValueError:
-                pass  # ファイル名が不正の場合はスキップ
+                print(f"Skipped invalid log file: {file_name}")  # 日付部分が不正な場合はスキップ
 
 # 定期的にログ削除を実行する関数
 def schedule_cleanup(interval, log_dir, days_to_keep):
