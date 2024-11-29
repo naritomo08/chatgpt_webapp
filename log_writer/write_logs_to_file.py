@@ -51,7 +51,7 @@ def setup_logger(log_file):
         interval=1,
         backupCount=0  # 自動削除は行わず、手動で管理
     )
-    handler.namer = lambda name: name.replace(".log", f"-{datetime.now().strftime('%Y%m%d')}.log")
+    handler.suffix = "%Y%m%d"  # ローテーション後のファイル名形式
 
     formatter = logging.Formatter('%(asctime)s - %(message)s')
     handler.setFormatter(formatter)
