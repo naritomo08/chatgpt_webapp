@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, jsonify, session, redirect, url_for, flash
 import openai
+import ollama
 import logging
 from datetime import datetime
 import os
@@ -9,6 +10,10 @@ from flask_wtf.csrf import CSRFProtect
 from user import get_user, users
 import json
 from forms import LoginForm
+
+# 追加: Markdownレンダリング用
+import markdown as md
+import bleach
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_fixed_secret_key_here')  # セッションのためのシークレットキーを設定
@@ -48,44 +53,94 @@ def save_chat_history(user_id, history):
     # Redisにユーザーのチャット履歴を保存
     redis_client.set(f"chat_history:{user_id}", json.dumps(history))
 
+# ===== Markdown -> 安全な HTML 変換（追加） =====
+ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS.union({
+    'p','pre','code','blockquote','hr','br',
+    'h1','h2','h3','h4','h5','h6',
+    'ul','ol','li','table','thead','tbody','tr','th','td',
+    'strong','em','del','img','a','span'
+})
+ALLOWED_ATTRS = {
+    **bleach.sanitizer.ALLOWED_ATTRIBUTES,
+    'a': ['href', 'title', 'rel', 'target'],
+    'img': ['src', 'alt', 'title'],
+    'code': ['class'],
+    'span': ['class'],
+    'th': ['align'],
+    'td': ['align'],
+}
+ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
+
+def render_markdown(text: str) -> str:
+    """Markdown を HTML に変換し、許可タグのみ残す"""
+    if not text:
+        return ""
+    html = md.markdown(
+        text,
+        extensions=[
+            'fenced_code',      # ```code``` 対応
+            'codehilite',       # Pygments でハイライト（CSS 必要）
+            'tables',           # テーブル
+            'sane_lists',
+            'toc',
+            'smarty'
+        ],
+        extension_configs={
+            'codehilite': {
+                'guess_lang': False,
+                'noclasses': False,  # CSS クラスを使う
+            }
+        }
+    )
+    cleaned = bleach.clean(
+        html,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRS,
+        protocols=ALLOWED_PROTOCOLS,
+        strip=True
+    )
+    return bleach.linkify(cleaned)
+
+# Jinja フィルタ登録
+app.jinja_env.filters['markdown'] = render_markdown
+# ==============================================
+
 def ask_chatgpt(question, user_id):
     try:
         # ユーザーのチャット履歴を取得
         chat_history = get_chat_history(user_id)
-        
+
         # 現在の質問をチャット履歴に追加
         chat_history.append({"role": "user", "content": question})
-        
+
         # ChatGPTに質問を送り、回答を得る
         response = openai.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=chat_history
         )
-        
+
         # 回答を取得
         answer = response.choices[0].message.content
-        
+
         # 回答をチャット履歴に追加
         chat_history.append({"role": "assistant", "content": answer})
-        
+
         # 更新されたチャット履歴を保存
         save_chat_history(user_id, chat_history)
-        
+
         return answer
 
     except Exception as e:
         logging.error(f"Error communicating with OpenAI: {e}")
         return "An error occurred while communicating with the AI."
 
+# ===== ここを Markdown 対応に変更 =====
 def format_question(question):
-    formatted = question.replace("\n", "<br>")
-    return formatted
+    return render_markdown(question)
 
 def format_answer(answer):
-    formatted = answer.replace("```python", "<pre><code class='language-python'>").replace("```", "</code></pre>")
-    formatted = formatted.replace("\n", "<br>")
-    formatted = formatted.replace("<br><pre>", "<pre>").replace("</pre><br>", "</pre>")
-    return formatted
+    return render_markdown(answer)
+# =====================================
 
 def log_interaction(user, question, answer):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -104,12 +159,15 @@ def index():
     return render_template("index.html", username=current_user.username, chat_history=chat_history)
 
 @app.route("/ask", methods=["POST"])
-@login_required  # ログインユーザーのみアクセス可能
+@login_required
 def ask():
     question = request.form["question"]
     raw_answer = ask_chatgpt(question, current_user.id)
+
+    # Markdown → HTML（サニタイズ済み）へ
     formatted_question = format_question(question)
     formatted_answer = format_answer(raw_answer)
+
     log_interaction(current_user, question, raw_answer)
     return jsonify(question=formatted_question, answer=formatted_answer)
 

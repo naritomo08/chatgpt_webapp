@@ -4,4 +4,6 @@ flask-login
 flask-wtf
 redis
 WTForms
-gunicorn
+markdown
+bleach
+pygments

@@ -54,7 +54,8 @@
                             <strong>{{ "ユーザー" if message.role == "user" else "アシスタント" }}:</strong>
                         </div>
                         <div class="card-body">
-                            <p>{{ message.content|safe }}</p>
+                            {# ここを Markdown レンダリングに変更 #}
+                            <p>{{ message.content | markdown | safe }}</p>
                         </div>
                     </div>
                 {% endfor %}
