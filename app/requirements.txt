@@ -7,3 +7,4 @@ WTForms
 markdown
 bleach
 pygments
+gunicorn

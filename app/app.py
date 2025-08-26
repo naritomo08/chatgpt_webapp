@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template, jsonify, session, redirect, url_for, flash
 import openai
-import ollama
 import logging
 from datetime import datetime
 import os
