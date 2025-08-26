@@ -85,7 +85,7 @@ def process_redis_logs(logger):
             log_entry = redis_client.lpop('chatgpt_logs')
             if log_entry:
                 log_entry = json.loads(log_entry)
-                log_message = f"{log_entry['timestamp']}\nUser: {log_entry['user']}\nQuestion:\n{log_entry['question']}\nAnswer:\n{log_entry['answer']}\n{'-'*80}"
+                log_message = f"{log_entry['timestamp']}\nUser: {log_entry['user']}\n生成時間(秒):{log_entry['latency_s']}\n{log_entry['question']}\nAnswer:\n{log_entry['answer']}\n{'-'*80}"
                 logger.info(log_message)
             else:
                 time.sleep(10)  # Redisが空の場合、10秒待機

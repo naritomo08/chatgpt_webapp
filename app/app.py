@@ -15,6 +15,9 @@ from forms import LoginForm
 import markdown as md
 import bleach
 
+# 追加: レイテンシ計測
+import time
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your_fixed_secret_key_here')  # セッションのためのシークレットキーを設定
 
@@ -134,23 +137,38 @@ def ask_chatgpt(question, user_id):
         logging.error(f"Error communicating with OpenAI: {e}")
         return "An error occurred while communicating with the AI."
 
-# ===== ここを Markdown 対応に変更 =====
+# ===== Markdown 対応 =====
 def format_question(question):
     return render_markdown(question)
 
 def format_answer(answer):
     return render_markdown(answer)
-# =====================================
+# ========================
 
-def log_interaction(user, question, answer):
+# モデル別メトリクスを何件保持するか（任意）
+LATENCY_LIST_MAX = 1000
+
+def log_interaction(user, question, answer, duration_ms=None, duration_s=None):
+    """会話ログ（Redis: chatgpt_logs）と、モデル別レイテンシ（Redis: latency:{LLM}）を保存"""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_entry = {
         "timestamp": timestamp,
         "user": user.username,
         "question": question,
-        "answer": answer
+        "answer": answer,
+        "latency_ms": duration_ms,
+        "latency_s": duration_s
     }
     redis_client.lpush('chatgpt_logs', json.dumps(log_entry))
+
+    if duration_ms is not None:
+        key_ms = f"latency:ms"
+        redis_client.lpush(key_ms, duration_ms)
+        redis_client.ltrim(key_ms, 0, LATENCY_LIST_MAX - 1)
+    if duration_s is not None:
+        key_s = f"latency:s"
+        redis_client.lpush(key_s, duration_s)
+        redis_client.ltrim(key_s, 0, LATENCY_LIST_MAX - 1)
 
 @app.route("/", methods=["GET"])
 @login_required
@@ -162,14 +180,32 @@ def index():
 @login_required
 def ask():
     question = request.form["question"]
+
+    # ===== レイテンシ計測開始 =====
+    t0 = time.monotonic()
+
     raw_answer = ask_chatgpt(question, current_user.id)
+
+    t1 = time.monotonic()
+    # ===== レイテンシ計測終了 =====
+
+    duration_s = round((t1 - t0), 3)         # 秒（小数第3位まで）
+    duration_ms = int(duration_s * 1000)     # ミリ秒（整数）
 
     # Markdown → HTML（サニタイズ済み）へ
     formatted_question = format_question(question)
     formatted_answer = format_answer(raw_answer)
 
-    log_interaction(current_user, question, raw_answer)
-    return jsonify(question=formatted_question, answer=formatted_answer)
+    # レイテンシ付きでログ保存
+    log_interaction(current_user, question, raw_answer, duration_ms, duration_s)
+
+    # 必要ならフロントで表示できるよう同梱
+    return jsonify(
+        question=formatted_question,
+        answer=formatted_answer,
+        latency_ms=duration_ms,
+        latency_s=duration_s
+    )
 
 @app.route("/reset", methods=["POST"])
 @login_required

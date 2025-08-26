@@ -1,5 +1,4 @@
 #loading {
-    display: none;
     text-align: center;
     margin-top: 20px;
 }
@@ -18,3 +17,5 @@
 code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; 
 }
+
+.hidden { display: none !important; }
