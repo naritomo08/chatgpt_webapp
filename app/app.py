@@ -111,6 +111,9 @@ def ask_chatgpt(question, user_id):
     try:
         # ユーザーのチャット履歴を取得
         chat_history = get_chat_history(user_id)
+        
+        if not chat_history or chat_history[0].get("role") != "system":
+            chat_history.insert(0, {"role": "system", "content": "あなたは優秀なAIアシスタントです。できるだけ簡潔に回答してください。"})
 
         # 現在の質問をチャット履歴に追加
         chat_history.append({"role": "user", "content": question})
