@@ -107,13 +107,13 @@ def render_markdown(text: str) -> str:
 app.jinja_env.filters['markdown'] = render_markdown
 # ==============================================
 
-def ask_chatgpt(question, user_id):
+def ask_chatgpt(assistant, question, user_id):
     try:
         # ユーザーのチャット履歴を取得
         chat_history = get_chat_history(user_id)
         
         if not chat_history or chat_history[0].get("role") != "system":
-            chat_history.insert(0, {"role": "system", "content": "あなたは優秀なAIアシスタントです。できるだけ簡潔に回答してください。"})
+            chat_history.insert(0, {"role": "system", "content": assistant})
 
         # 現在の質問をチャット履歴に追加
         chat_history.append({"role": "user", "content": question})
@@ -182,11 +182,12 @@ def index():
 @login_required
 def ask():
     question = request.form["question"]
+    assistant = request.form["assistant"]
 
     # ===== レイテンシ計測開始 =====
     t0 = time.monotonic()
 
-    raw_answer = ask_chatgpt(question, current_user.id)
+    raw_answer = ask_chatgpt(assistant, question, current_user.id)
 
     t1 = time.monotonic()
     # ===== レイテンシ計測終了 =====

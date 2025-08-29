@@ -88,7 +88,7 @@ function showResult(questionHTML, answerHTML) {
     const userCard = document.createElement('div');
     userCard.className = 'card mt-2';
     userCard.innerHTML = `
-      <div class="card-header"><strong>ユーザー:</strong></div>
+      <div class="card-header"><strong>質問:</strong></div>
       <div class="card-body">${questionHTML}</div>
     `;
     chatHistoryDiv.appendChild(userCard);
@@ -96,7 +96,7 @@ function showResult(questionHTML, answerHTML) {
     const assistantCard = document.createElement('div');
     assistantCard.className = 'card mt-2';
     assistantCard.innerHTML = `
-      <div class="card-header"><strong>アシスタント:</strong></div>
+      <div class="card-header"><strong>回答:</strong></div>
       <div class="card-body">${answerHTML}</div>
     `;
     chatHistoryDiv.appendChild(assistantCard);

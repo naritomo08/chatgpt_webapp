@@ -16,6 +16,10 @@
         <form id="question-form" class="mt-4">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
+            <label for="question">アシスタント種類:</label>
+            <textarea id="assistant" name="assistant" class="form-control" rows="2" required>あなたは優秀なAIアシスタントです。できるだけ簡潔に回答してください。</textarea>
+            </div>
+            <div class="form-group">
             <label for="question">質問:</label>
             <textarea id="question" name="question" class="form-control" rows="5" required></textarea>
             </div>
@@ -58,7 +62,7 @@
             {% for message in chat_history %}
                 <div class="card mt-2">
                 <div class="card-header">
-                    <strong>{{ "ユーザー" if message.role == "user" else "アシスタント" }}:</strong>
+                    <strong>{{ "質問" if message.role == "user" else ("アシスタント" if message.role == "system" else "回答") }}:</strong>
                 </div>
                 <div class="card-body">
                     <p>{{ message.content | markdown | safe }}</p>
