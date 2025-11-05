@@ -8,3 +8,7 @@ markdown
 bleach
 pygments
 gunicorn
+langgraph
+langchain-core
+langchain-openai
+requests

@@ -33,14 +33,38 @@ function submitQuestion(event) {
   const formData = new FormData(form);
   const t0 = performance.now();
 
-  fetch('/ask', { method: 'POST', body: formData })
-    .then(async (response) => {
-      if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
-      }
-      return response.json();
-    })
+  const engineSel = document.getElementById('engine-select');
+  const chosen = engineSel ? engineSel.value : 'ask';
+  const endpoint = chosen === 'ask_graph' ? '/ask_graph' : '/ask';
+
+  // fetch ラッパ: Graph失敗時に通常エンドポイントへフォールバック
+  function fetchWithFallback(url) {
+    return fetch(url, { method: 'POST', body: formData })
+      .then(async (response) => {
+        if (!response.ok) {
+          const text = await response.text().catch(() => '');
+          throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+        }
+        return response.json();
+      })
+      .catch((err) => {
+        if (url === '/ask_graph') {
+          console.warn('LangGraph 呼び出し失敗。通常エンドポイントへフォールバックします:', err);
+          return fetch('/ask', { method: 'POST', body: formData })
+            .then(async (response) => {
+              if (!response.ok) {
+                const text = await response.text().catch(() => '');
+                throw new Error(`HTTP ${response.status}: ${text || response.statusText}`);
+              }
+              return response.json();
+            })
+            .then((data) => ({ ...data, engine: data.engine || 'fallback-ask' }));
+        }
+        throw err;
+      });
+  }
+
+  fetchWithFallback(endpoint)
     .then((data) => {
       // 結果反映
       showResult(data.question, data.answer);
@@ -49,12 +73,18 @@ function submitQuestion(event) {
       const roundtripMs = Math.round(performance.now() - t0);
       const latencyEl = document.getElementById('result-latency');
       if (latencyEl) {
+        let baseText;
         if (typeof data.latency_s === 'number' && typeof data.latency_ms === 'number') {
-          latencyEl.textContent =
-            `応答時間: ${data.latency_s.toFixed(3)} 秒（サーバ処理: ${data.latency_ms} ms） / 往復: ${roundtripMs} ms`;
+          baseText = `応答時間: ${data.latency_s.toFixed(3)} 秒（サーバ処理: ${data.latency_ms} ms） / 往復: ${roundtripMs} ms`;
         } else {
-          latencyEl.textContent = `往復時間: ${roundtripMs} ms`;
+          baseText = `往復時間: ${roundtripMs} ms`;
         }
+        if (data.engine) {
+          baseText += ` / Engine: ${data.engine}`;
+        } else {
+          baseText += ` / Engine: ${chosen}`;
+        }
+        latencyEl.textContent = baseText;
       }
 
       // 先に result を表示 → その後にローディングを消すとチラ見えが安定
@@ -66,7 +96,6 @@ function submitQuestion(event) {
     })
     .catch((error) => {
       console.error('Error:', error);
-      // エラー時もローディングを消して、結果欄にエラー表示（任意）
       hideLoading();
       const qEl = document.getElementById('result-question');
       const aEl = document.getElementById('result-answer');
@@ -109,4 +138,16 @@ function showResult(questionHTML, answerHTML) {
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('question-form');
   if (form) form.addEventListener('submit', submitQuestion);
+
+  // エンジンセレクト保存/復元
+  const engineSel = document.getElementById('engine-select');
+  if (engineSel) {
+    const saved = localStorage.getItem('engine');
+    if (saved && [...engineSel.options].some(o => o.value === saved)) {
+      engineSel.value = saved;
+    }
+    engineSel.addEventListener('change', () => {
+      localStorage.setItem('engine', engineSel.value);
+    });
+  }
 });

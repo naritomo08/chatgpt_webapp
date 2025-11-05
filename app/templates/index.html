@@ -17,7 +17,15 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
             <label for="question">アシスタント種類:</label>
-            <textarea id="assistant" name="assistant" class="form-control" rows="2" required>あなたは優秀なAIアシスタントです。</textarea>
+            <textarea id="assistant" name="assistant" class="form-control" rows="2" required>あなたは優秀なAIアシスタントです。できるだけ簡潔に回答してください。</textarea>
+            </div>
+            <div class="form-group mt-2">
+            <label for="engine-select">エンジン選択:</label>
+            <select id="engine-select" class="form-select form-select-sm">
+                <option value="ask" selected>通常 (直接呼び出し)</option>
+                <option value="ask_graph">LangGraph</option>
+            </select>
+            <small class="form-text text-muted">LangGraph は段階的拡張が可能な実験的パスです。</small>
             </div>
             <div class="form-group">
             <label for="question">質問:</label>
